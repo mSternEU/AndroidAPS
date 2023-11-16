@@ -339,12 +339,14 @@ class WizardDialog : DaggerDialogFragment() {
     }
 
     private fun saveCheckedStates() {
+        sp.putBoolean(R.string.key_wizard_include_temptarget, binding.ttCheckbox.isChecked)
         sp.putBoolean(R.string.key_wizard_include_cob, binding.cobCheckbox.isChecked)
         sp.putBoolean(R.string.key_wizard_include_trend_bg, binding.bgTrendCheckbox.isChecked)
         sp.putBoolean(R.string.key_wizard_correction_percent, binding.correctionPercent.isChecked)
     }
 
     private fun loadCheckedStates() {
+        binding.ttCheckbox.isChecked = sp.getBoolean(R.string.key_wizard_include_temptarget, true)
         binding.bgTrendCheckbox.isChecked = sp.getBoolean(R.string.key_wizard_include_trend_bg, false)
         binding.cobCheckbox.isChecked = sp.getBoolean(R.string.key_wizard_include_cob, false)
         usePercentage = sp.getBoolean(R.string.key_wizard_correction_percent, false)
