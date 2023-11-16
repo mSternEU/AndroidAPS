@@ -175,20 +175,9 @@ class WizardDialog : DaggerDialogFragment() {
                 ?: 0.0, 0.0, maxCarbs.toDouble(), 1.0, DecimalFormat("0"), false, binding.okcancel.ok, textWatcher
         )
 
-        // If there is no BG using % lower that 100% leads to high BGs
-        // because loop doesn't add missing insulin
-        var percentage = sp.getInt(app.aaps.core.utils.R.string.key_boluswizard_percentage, 100).toDouble()
-        val time = sp.getLong(app.aaps.core.utils.R.string.key_reset_boluswizard_percentage_time, 16)
-        repository.getLastGlucoseValueWrapped().blockingGet().let {
-            // if last value is older or there is no bg
-            if (it is ValueWrapper.Existing) {
-                if (it.value.timestamp < dateUtil.now() - T.mins(time).msecs())
-                    percentage = 100.0
-            } else percentage = 100.0
-        }
 
         if (usePercentage) {
-            calculatedPercentage = percentage
+            calculatedPercentage = sp.getInt(R.string.key_boluswizard_percentage, 100).toDouble()
             binding.correctionInput.setParams(calculatedPercentage, 10.0, 200.0, 5.0, DecimalFormat("0"), false, binding.okcancel.ok, textWatcher)
             binding.correctionInput.value = calculatedPercentage
             binding.correctionUnit.text = "%"
