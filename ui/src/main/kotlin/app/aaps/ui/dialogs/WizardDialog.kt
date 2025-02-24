@@ -178,22 +178,12 @@ class WizardDialog : DaggerDialogFragment() {
                 ?: 0.0, 0.0, maxCarbs.toDouble(), 1.0, DecimalFormat("0"), false, binding.okcancel.ok, textWatcher
         )
 
-        // If there is no BG using % lower that 100% leads to high BGs
-        // because loop doesn't add missing insulin
-        var percentage = preferences.get(IntKey.OverviewBolusPercentage)
-        val time = preferences.get(IntKey.OverviewResetBolusPercentageTime).toLong()
-        persistenceLayer.getLastGlucoseValue().let {
-            // if last value is older or there is no bg
-            if (it != null) {
-                if (it.timestamp < dateUtil.now() - T.mins(time).msecs())
-                    percentage = 100
-            } else percentage = 100
-        }
 
         if (usePercentage) {
-            calculatedPercentage = percentage
-            binding.correctionInput.setParams(calculatedPercentage.toDouble(), 10.0, 200.0, 5.0, DecimalFormat("0"), false, binding.okcancel.ok, textWatcher)
-            binding.correctionInput.value = calculatedPercentage.toDouble()
+            calculatedPercentage = sp.getInt(app.aaps.core.utils.R.string.key_boluswizard_percentage, 100).toDouble()
+            binding.correctionInput.setParams(calculatedPercentage, 10.0, 200.0, 5.0, DecimalFormat("0"), false, binding.okcancel.ok, textWatcher)
+            binding.correctionInput.value = calculatedPercentage
+
             binding.correctionUnit.text = "%"
         } else {
             binding.correctionInput.setParams(
@@ -354,12 +344,14 @@ class WizardDialog : DaggerDialogFragment() {
     }
 
     private fun saveCheckedStates() {
+        sp.putBoolean(R.string.key_wizard_include_temptarget, binding.ttCheckbox.isChecked)
         sp.putBoolean(R.string.key_wizard_include_cob, binding.cobCheckbox.isChecked)
         sp.putBoolean(R.string.key_wizard_include_trend_bg, binding.bgTrendCheckbox.isChecked)
         sp.putBoolean(R.string.key_wizard_correction_percent, binding.correctionPercent.isChecked)
     }
 
     private fun loadCheckedStates() {
+        binding.ttCheckbox.isChecked = sp.getBoolean(R.string.key_wizard_include_temptarget, true)
         binding.bgTrendCheckbox.isChecked = sp.getBoolean(R.string.key_wizard_include_trend_bg, false)
         binding.cobCheckbox.isChecked = sp.getBoolean(R.string.key_wizard_include_cob, false)
         usePercentage = sp.getBoolean(R.string.key_wizard_correction_percent, false)
