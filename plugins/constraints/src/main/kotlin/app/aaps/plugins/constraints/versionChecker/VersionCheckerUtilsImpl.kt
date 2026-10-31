@@ -48,20 +48,21 @@ class VersionCheckerUtilsImpl @Inject constructor(
         if (receiverStatusStore.isKnownNetworkStatus && receiverStatusStore.isConnected) {
             Thread {
                 try {
-                    val definition: String = URL("https://raw.githubusercontent.com/nightscout/AndroidAPS/versions/definition.json").readText()
+                    val definition: String = URL("https://raw.githubusercontent.com/mSternEU/AndroidAPS/versions/definition.json").readText()
                     val version: String? = AllowedVersions.findByApi(definition, Build.VERSION.SDK_INT)?.optString("supported")
                     val newVersionByApi = compareWithCurrentVersion(version, config.get().VERSION_NAME)
 
-                    // App expiration
-                    if (newVersionByApi || config.get().isDev()) {
-                        var endDate = sp.getLong(rh.gs(app.aaps.core.utils.R.string.key_app_expiration) + "_" + config.get().VERSION_NAME, 0)
-                        AllowedVersions.findByVersion(definition, config.get().VERSION_NAME)?.let { expirationJson ->
-                            AllowedVersions.endDateToMilliseconds(expirationJson.getString("endDate"))?.let { ed ->
-                                endDate = ed + T.days(1).msecs()
-                                sp.putLong(rh.gs(app.aaps.core.utils.R.string.key_app_expiration) + "_" + config.get().VERSION_NAME, endDate)
-                            }
-                        }
-                        if (endDate != 0L) onExpireDateDetected(config.get().VERSION_NAME, dateUtil.dateString(endDate))
+                    // App expiration – immer auswerten; gespeicherten Wert verwerfen, wenn kein Eintrag existiert
+                    val expirationKey = rh.gs(app.aaps.core.utils.R.string.key_app_expiration) + "_" + config.get().VERSION_NAME
+                    val ed = AllowedVersions.findByVersion(definition, config.get().VERSION_NAME)
+                        ?.let { AllowedVersions.endDateToMilliseconds(it.getString("endDate")) }
+                    if (ed != null) {
+                        val endDate = ed + T.days(1).msecs()
+                        sp.putLong(expirationKey, endDate)
+                        // Hinweis wie im Original nur, wenn eine neuere Version verfügbar ist
+                        if (newVersionByApi || config.get().isDev()) onExpireDateDetected(config.get().VERSION_NAME, dateUtil.dateString(endDate))
+                    } else {
+                        sp.remove(expirationKey)
                     }
 
                 } catch (e: IOException) {
