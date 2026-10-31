@@ -68,9 +68,32 @@ class VersionCheckerUtilsImpl @Inject constructor(
                 } catch (e: IOException) {
                     aapsLogger.error(LTag.CORE, "Github master version check error: $e")
                 }
+                checkOfficialDefinitionInfo()
             }.start()
         } else
             aapsLogger.debug(LTag.CORE, "Github master version not checked. No connectivity")
+
+    /**
+     * Liest die offizielle nightscout-Definition nur zur Information.
+     * Zeigt einmalig einen Hinweis, wenn sich die für diese Installation relevanten Werte
+     * (aktuelle Version für die Android-API, Ablaufdatum der eigenen Version) geändert haben.
+     * Schreibt keine Ablauf- oder Check-Zeitstempel und hat daher keinen Einfluss auf Loop oder MaxIOB.
+     */
+    private fun checkOfficialDefinitionInfo() {
+        try {
+            val official: String = URL(OFFICIAL_DEFINITION_URL).readText()
+            val versionName = config.get().VERSION_NAME
+            val supported = AllowedVersions.findByApi(official, Build.VERSION.SDK_INT)?.optString("supported")?.takeIf { it.isNotBlank() } ?: "–"
+            val endDate = AllowedVersions.findByVersion(official, versionName)?.optString("endDate")?.takeIf { it.isNotBlank() } ?: "–"
+            val state = "$supported|$versionName|$endDate"
+            if (state == sp.getString(R.string.key_official_definition_state, "")) return
+            sp.putString(R.string.key_official_definition_state, state)
+            aapsLogger.debug(LTag.CORE, "Official definition changed: $state")
+            uiInteraction.addNotification(Notification.OFFICIAL_VERSION_INFO, rh.gs(R.string.official_version_info, supported, versionName, endDate), Notification.INFO)
+        } catch (e: Exception) {
+            aapsLogger.error(LTag.CORE, "Official definition info check error: $e")
+        }
+    }
 
     @Suppress("SameParameterValue")
     /**
@@ -159,6 +182,7 @@ class VersionCheckerUtilsImpl @Inject constructor(
 
     companion object {
 
+        private const val OFFICIAL_DEFINITION_URL = "https://raw.githubusercontent.com/nightscout/AndroidAPS/versions/definition.json"
         private val CHECK_EVERY = TimeUnit.DAYS.toMillis(1)
         private val WARN_EVERY = TimeUnit.DAYS.toMillis(1)
     }

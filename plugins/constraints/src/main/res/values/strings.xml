@@ -30,6 +30,8 @@
     <string name="running_invalid_version">We have detected that you are running an invalid version. Loop disabled!</string>
     <string name="versionavailable">Version %1$s available</string>
     <string name="version_expire">Version %1$s expire on %2$s</string>
+    <string name="key_official_definition_state" translatable="false">official_definition_state</string>
+    <string name="official_version_info" translatable="false">Info (offizielle AAPS-Definition): aktuelle Version %1$s, offizielles Ablaufdatum für %2$s: %3$s. Nur zur Information – ohne Auswirkung auf diese Installation.</string>
 
     <!-- Signature verifier -->
     <string name="signature_verifier" translatable="false">Signature verifier</string>
