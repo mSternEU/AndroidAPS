@@ -18,7 +18,6 @@ import android.widget.CompoundButton
 import androidx.fragment.app.FragmentManager
 import app.aaps.core.data.configuration.Constants
 import app.aaps.core.data.model.GlucoseUnit
-import app.aaps.core.data.time.T
 import app.aaps.core.interfaces.constraints.ConstraintsChecker
 import app.aaps.core.interfaces.db.PersistenceLayer
 import app.aaps.core.interfaces.iob.IobCobCalculator
@@ -177,20 +176,11 @@ class WizardDialog : DaggerDialogFragment() {
             savedInstanceState?.getDouble("carbs_input")
                 ?: 0.0, 0.0, maxCarbs.toDouble(), 1.0, DecimalFormat("0"), false, binding.okcancel.ok, textWatcher
         )
-        // If there is no BG using % lower that 100% leads to high BGs
-        // because loop doesn't add missing insulin
-        var percentage = preferences.get(IntKey.OverviewBolusPercentage)
-        val time = preferences.get(IntKey.OverviewResetBolusPercentageTime).toLong()
-        persistenceLayer.getLastGlucoseValue().let {
-            // if last value is older or there is no bg
-            if (it != null) {
-                if (it.timestamp < dateUtil.now() - T.mins(time).msecs())
-                    percentage = 100
-            } else percentage = 100
-        }
 
+        // Eigene Entscheidung (vgl. a67a7ba): keine automatische Rücksetzung auf 100 %
+        // bei fehlendem/altem BZ – der eingestellte Bolus-Prozentwert wird immer respektiert.
         if (usePercentage) {
-            calculatedPercentage = percentage
+            calculatedPercentage = preferences.get(IntKey.OverviewBolusPercentage)
             binding.correctionInput.setParams(calculatedPercentage.toDouble(), 10.0, 200.0, 5.0, DecimalFormat("0"), false, binding.okcancel.ok, textWatcher)
             binding.correctionInput.value = calculatedPercentage.toDouble()
             binding.correctionUnit.text = "%"
